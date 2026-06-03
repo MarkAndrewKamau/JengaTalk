@@ -17,9 +17,10 @@ import { Card, CardHeader, CardTitle } from '../../components/ui/Card'
 import { PageLoader } from '../../components/ui/Spinner'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { productsApi } from '../../api/products'
-import { useAuthStore } from '../../stores/authStore'
+import { ordersApi } from '../../api/orders'
 import { formatCurrency } from '../../utils/format'
 import type { SupplierProduct } from '../../types'
+import { useAuthStore } from '../../stores/authStore'
 import toast from 'react-hot-toast'
 
 const KENYA_COUNTIES = ['Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Kiambu', 'Machakos']
@@ -146,6 +147,7 @@ function MessageSquare(props: { size: number }) {
 }
 
 export function ComparePage() {
+  const { user } = useAuthStore()
   const [search, setSearch] = useState('')
   const [submittedSearch, setSubmittedSearch] = useState('')
   const [county, setCounty] = useState('Nairobi')
@@ -156,9 +158,9 @@ export function ComparePage() {
   const [orderModal, setOrderModal] = useState<SupplierProduct | null>(null)
   const [orderQty, setOrderQty] = useState('1')
   const [orderAddress, setOrderAddress] = useState('')
+  const [orderLoading, setOrderLoading] = useState(false)
   const [alertModal, setAlertModal] = useState(false)
   const [alertPrice, setAlertPrice] = useState('')
-  const user = useAuthStore((state) => state.user)
 
   const filtered = SUGGESTIONS.filter((s) => s.toLowerCase().includes(search.toLowerCase()))
 
@@ -426,7 +428,27 @@ export function ComparePage() {
 
             <div className="flex gap-3">
               <Button variant="outline" fullWidth onClick={() => setOrderModal(null)}>Cancel</Button>
-              <Button fullWidth onClick={() => { toast.success('Order placed! You\'ll receive an SMS confirmation.'); setOrderModal(null) }}>
+              <Button fullWidth loading={orderLoading} onClick={async () => {
+                if (!orderModal) return
+                setOrderLoading(true)
+                try {
+                  const order = await ordersApi.place({
+                    supplier_id: String(orderModal.supplier_id),
+                    items: [{ supplier_product_id: String(orderModal.id), quantity: Number(orderQty) }],
+                    delivery_address: orderAddress || county,
+                    payment_method: 'cash_on_delivery',
+                    contractor_phone: user?.phone,
+                    contractor_name: user?.name,
+                    contractor_county: county.toLowerCase(),
+                  })
+                  toast.success(`Order #${order.data.order.id} placed! SMS confirmation on the way.`)
+                  setOrderModal(null)
+                } catch {
+                  toast.error('Failed to place order. Please try again.')
+                } finally {
+                  setOrderLoading(false)
+                }
+              }}>
                 Confirm Order
               </Button>
             </div>

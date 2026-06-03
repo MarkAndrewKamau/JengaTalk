@@ -16,7 +16,8 @@ function orderRoutes({ store, smsService }) {
   const router = express.Router();
 
   router.post("/", asyncHandler(async (req, res) => {
-    const order = await createOrder(store, smsService, req.body);
+    const body = req.user?.id ? { ...req.body, contractor_id: req.user.id } : req.body;
+    const order = await createOrder(store, smsService, body);
     res.status(201).json({ order });
   }));
 
