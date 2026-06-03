@@ -165,13 +165,12 @@ export function ComparePage() {
     queryFn: () => productsApi.compare({
       material: submittedSearch,
       county,
-      max_price: maxPrice ? Number(maxPrice) : undefined,
-      has_delivery: hasDelivery || undefined,
     }),
     enabled: !!submittedSearch,
   })
 
-  const results: SupplierProduct[] = data?.data?.data?.data || []
+  // Backend /api/products/compare returns { material, results }
+  const results: SupplierProduct[] = data?.data?.results || []
 
   const handleSearch = () => {
     if (!search.trim()) return
