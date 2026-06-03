@@ -37,8 +37,8 @@ export function LoginPage() {
     setLoading(true)
     try {
       const res = await authApi.verifyOTP({ phone, otp: code })
-      const { user, token, refresh_token } = res.data.data
-      setAuth(user, token, refresh_token)
+      const { user, token } = res.data
+      setAuth(user, token)
       toast.success(`Welcome back, ${user.name}!`)
       if (user.role === 'supplier') navigate('/supplier/overview')
       else if (user.role === 'contractor') navigate('/contractor/compare')
