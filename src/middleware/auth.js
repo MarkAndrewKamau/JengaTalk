@@ -18,7 +18,12 @@ function attachAuth(store) {
 
     if (payload?.sub) {
       const user = store.findById("users", payload.sub);
-      if (user) req.user = user;
+      if (user) {
+        req.user = user;
+      } else if (payload.phone) {
+        const byPhone = store.all("users").find((u) => u.phone === normalizePhone(payload.phone));
+        req.user = byPhone || { id: null, role: payload.role || "contractor", phone: normalizePhone(payload.phone), name: "" };
+      }
     } else if (demoPhone) {
       const user = store
         .all("users")
