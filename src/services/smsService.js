@@ -1,6 +1,9 @@
 const { env } = require("../config/env");
-const { normalizePhone } = require("../utils/phone");
+const { HttpError } = require("../utils/httpError");
+const { maskPhone, normalizePhone } = require("../utils/phone");
 const { truncateSms } = require("../utils/text");
+
+const acceptedRecipientStatuses = new Set(["success", "sent", "queued", "submitted", "buffered"]);
 
 function getSmsApiUrl() {
   if (env.africaTalking.smsApiUrl) return env.africaTalking.smsApiUrl;
@@ -42,16 +45,43 @@ async function sendViaAfricasTalking({ recipients, text, from }) {
   }
 
   const atRecipients = result?.SMSMessageData?.Recipients || [];
+  if (!atRecipients.length) {
+    const message = result?.SMSMessageData?.Message || "Africa's Talking returned no SMS recipients";
+    throw new HttpError(502, `Africa's Talking SMS was not accepted: ${message}`);
+  }
+
+  const recipientsResult = atRecipients.map((recipient) => ({
+    phone: recipient.number,
+    messageId: recipient.messageId,
+    status: recipient.status,
+    cost: recipient.cost,
+  }));
+  const failedRecipients = recipientsResult.filter((recipient) => {
+    return !acceptedRecipientStatuses.has(String(recipient.status || "").toLowerCase());
+  });
+
+  console.info("Africa's Talking SMS result", {
+    message: result?.SMSMessageData?.Message,
+    recipients: recipientsResult.map((recipient) => ({
+      phone: maskPhone(recipient.phone),
+      status: recipient.status,
+      cost: recipient.cost,
+      messageId: recipient.messageId,
+    })),
+  });
+
+  if (failedRecipients.length) {
+    const statuses = failedRecipients
+      .map((recipient) => `${maskPhone(recipient.phone)}=${recipient.status || "Unknown"}`)
+      .join(", ");
+    throw new HttpError(502, `Africa's Talking SMS was not accepted: ${statuses}`);
+  }
+
   return {
     provider: "africas-talking",
     status: "sent",
     raw: result,
-    recipients: atRecipients.map((recipient) => ({
-      phone: recipient.number,
-      messageId: recipient.messageId,
-      status: recipient.status,
-      cost: recipient.cost,
-    })),
+    recipients: recipientsResult,
   };
 }
 

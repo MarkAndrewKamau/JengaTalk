@@ -47,7 +47,7 @@ const env = {
   africaTalking: {
     username: process.env.AT_USERNAME || "sandbox",
     apiKey: process.env.AT_API_KEY || "",
-    smsFrom: process.env.AT_SMS_FROM || process.env.SMS_SHORTCODE || "20880",
+    smsFrom: process.env.AT_SMS_FROM || "",
     smsApiUrl: process.env.AT_SMS_API_URL || "",
   },
 };
