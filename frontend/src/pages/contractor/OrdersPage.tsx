@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { ClipboardList, AlertTriangle, ChevronRight } from 'lucide-react'
+import { ClipboardList, AlertTriangle, ChevronRight, Phone, MapPin } from 'lucide-react'
 import { DashboardHeader } from '../../components/layout/DashboardHeader'
 import { Drawer } from '../../components/ui/Modal'
 import { StatusBadge } from '../../components/ui/Badge'
@@ -128,9 +128,27 @@ export function ContractorOrdersPage() {
 
             {/* Supplier */}
             <div className="bg-gray-50 rounded-xl p-4">
+              <h4 className="font-semibold text-sm text-concrete uppercase tracking-wide mb-2">Supplier</h4>
               <p className="font-semibold text-secondary">{selected.supplier?.business_name}</p>
               <p className="text-xs text-concrete mt-0.5">{selected.supplier?.county}, {selected.supplier?.town}</p>
+              {selected.supplier?.contact_phone && (
+                <a href={`tel:${selected.supplier.contact_phone}`}
+                  className="flex items-center gap-1.5 text-xs text-primary font-medium mt-2 hover:underline">
+                  <Phone size={11} />{selected.supplier.contact_phone}
+                </a>
+              )}
             </div>
+
+            {/* Delivery address */}
+            {selected.delivery_address && (
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h4 className="font-semibold text-sm text-concrete uppercase tracking-wide mb-2">Delivery Address</h4>
+                <div className="flex items-start gap-1.5 text-sm text-secondary">
+                  <MapPin size={13} className="mt-0.5 shrink-0 text-primary" />
+                  <span>{selected.delivery_address}</span>
+                </div>
+              </div>
+            )}
 
             {/* Items */}
             <div>

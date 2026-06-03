@@ -188,12 +188,26 @@ export function OrdersPage() {
                 <div>
                   <p className="font-semibold text-secondary">{selectedOrder.contractor?.name}</p>
                   <div className="flex items-center gap-3 text-xs text-concrete mt-0.5">
-                    <span className="flex items-center gap-1"><Phone size={11} />{selectedOrder.contractor?.phone}</span>
+                    <a href={`tel:${selectedOrder.contractor?.phone}`}
+                      className="flex items-center gap-1 text-primary hover:underline">
+                      <Phone size={11} />{selectedOrder.contractor?.phone}
+                    </a>
                     <span className="flex items-center gap-1"><MapPin size={11} />{selectedOrder.contractor?.county}</span>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Delivery address */}
+            {selectedOrder.delivery_address && (
+              <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+                <h4 className="font-semibold text-sm text-concrete uppercase tracking-wide mb-2">Delivery Address</h4>
+                <div className="flex items-start gap-1.5 text-sm text-secondary font-medium">
+                  <MapPin size={13} className="mt-0.5 shrink-0 text-amber-500" />
+                  <span>{selectedOrder.delivery_address}</span>
+                </div>
+              </div>
+            )}
 
             {/* Items */}
             <div>
