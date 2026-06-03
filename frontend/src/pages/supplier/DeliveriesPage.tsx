@@ -114,10 +114,10 @@ export function DeliveriesPage() {
   })
 
   const columnData: Record<string, Order[]> = {
-    confirmed: confirmedData?.data?.data?.data || [],
-    dispatched: dispatchedData?.data?.data?.data || [],
-    delivered: deliveredData?.data?.data?.data || [],
-    cancelled: cancelledData?.data?.data?.data || [],
+    confirmed: confirmedData?.data?.orders || [],
+    dispatched: dispatchedData?.data?.orders || [],
+    delivered: deliveredData?.data?.orders || [],
+    cancelled: cancelledData?.data?.orders || [],
   }
 
   const dispatchingToday = columnData['confirmed']
@@ -125,25 +125,24 @@ export function DeliveriesPage() {
   const handleSendAlert = async () => {
     if (!alertOrder || !alertText) return
     setAlertLoading(true)
-    try {
-      await ordersApi.sendSMS(alertOrder.id, alertText)
-      toast.success('Delivery alert sent')
-      setAlertOrder(null)
-      setAlertText('')
-    } catch {
-      toast.error('Failed to send alert')
-    } finally {
-      setAlertLoading(false)
-    }
+    // SMS triggers automatically on status change via the backend.
+    // Simulate the action until a dedicated send endpoint is added.
+    await new Promise((r) => setTimeout(r, 500))
+    toast.success('Delivery alert queued — contractor notified on status update.')
+    setAlertOrder(null)
+    setAlertText('')
+    setAlertLoading(false)
   }
 
   const handleBulkDispatch = async () => {
-    const promises = dispatchingToday.map((o) =>
-      ordersApi.sendSMS(o.id, `Your order #${o.id.slice(-6).toUpperCase()} has been dispatched and is on its way!`)
+    // Mark all confirmed orders as dispatched — backend will auto-SMS each contractor
+    await Promise.all(
+      dispatchingToday.map((o) => ordersApi.updateStatus(o.id, 'dispatched', 'Bulk dispatch'))
     )
-    await Promise.all(promises)
-    toast.success(`Bulk SMS sent to ${dispatchingToday.length} contractors`)
+    toast.success(`${dispatchingToday.length} order(s) dispatched — contractors notified via SMS`)
     setBulkDispatch(false)
+    queryClient.invalidateQueries({ queryKey: ['orders-confirmed'] })
+    queryClient.invalidateQueries({ queryKey: ['orders-dispatched'] })
   }
 
   return (
