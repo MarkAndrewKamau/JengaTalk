@@ -4,8 +4,10 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 const { createApp } = require("../src/app");
+const { env } = require("../src/config/env");
 const { JsonStore } = require("../src/db/jsonStore");
 const { createSmsService, sendViaAfricasTalking } = require("../src/services/smsService");
+const { seedDemo } = require("../scripts/seed-demo");
 
 async function withServer(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "jengalink-"));
@@ -79,6 +81,29 @@ test("handles multi-word SMS material names", async (t) => {
   assert.match(price.body.reply, /BM01/);
 });
 
+test("creates quote requests for supplier products", async (t) => {
+  const { baseUrl, store } = await withServer(t);
+  const quote = await jsonFetch(`${baseUrl}/api/products/1/quote`, {
+    method: "POST",
+    body: JSON.stringify({
+      contractor_phone: "+254722123456",
+      contractor_name: "Quote Tester",
+      quantity: 12,
+    }),
+  });
+
+  assert.equal(quote.response.status, 201);
+  assert.equal(quote.body.quote.supplier_code, "BM01");
+  assert.equal(quote.body.quote.material_name, "OPC Cement");
+  assert.equal(quote.body.quote.estimated_total, 8640);
+  assert.equal(quote.body.notification.sent, true);
+
+  const quoteLog = store
+    .all("sms_logs")
+    .find((log) => log.status === "quote_requested" && log.message.includes("Quote Tester"));
+  assert.ok(quoteLog);
+});
+
 test("registers and verifies OTP for JWT access", async (t) => {
   const { baseUrl } = await withServer(t);
   const register = await jsonFetch(`${baseUrl}/api/auth/register`, {
@@ -107,6 +132,34 @@ test("registers and verifies OTP for JWT access", async (t) => {
   assert.equal(alerts.response.status, 200);
   assert.deepEqual(alerts.body.alerts, []);
 });
+
+test("supports a fixed demo OTP when configured", async (t) => {
+  const originalDemoOtp = env.demoOtpCode;
+  env.demoOtpCode = "123456";
+  t.after(() => {
+    env.demoOtpCode = originalDemoOtp;
+  });
+
+  const { baseUrl } = await withServer(t);
+  const register = await jsonFetch(`${baseUrl}/api/auth/register`, {
+    method: "POST",
+    body: JSON.stringify({
+      phone: "+254700000333",
+      name: "Demo OTP Tester",
+      role: "contractor",
+      county: "Nairobi",
+    }),
+  });
+  assert.equal(register.response.status, 201);
+
+  const verify = await jsonFetch(`${baseUrl}/api/auth/verify-otp`, {
+    method: "POST",
+    body: JSON.stringify({ phone: "+254700000333", otp: "123456" }),
+  });
+  assert.equal(verify.response.status, 200);
+  assert.ok(verify.body.token);
+});
+
 
 test("responds to USSD price lookup", async (t) => {
   const { baseUrl } = await withServer(t);
@@ -213,4 +266,25 @@ test("reports OTP as unsent when SMS provider returns a failed result", async (t
 
   assert.equal(response.status, 201);
   assert.equal(body.otp_sent, false);
+});
+
+test("seeds manual testing demo data idempotently", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "jengalink-"));
+  const store = new JsonStore({ filePath: path.join(dir, "store.json") });
+
+  seedDemo(store);
+  seedDemo(store);
+
+  const data = store.read();
+  const demoOrders = data.orders.filter((order) => order.demo);
+  const demoOrderIds = new Set(demoOrders.map((order) => Number(order.id)));
+
+  assert.equal(data.suppliers.length, 6);
+  assert.equal(data.materials.length, 17);
+  assert.equal(data.supplier_products.length, 34);
+  assert.equal(demoOrders.length, 10);
+  assert.equal(data.order_items.filter((item) => demoOrderIds.has(Number(item.order_id))).length, 20);
+  assert.equal(data.delivery_events.filter((event) => demoOrderIds.has(Number(event.order_id))).length, 24);
+  assert.equal(data.sms_logs.filter((log) => String(log.at_message_id || "").startsWith("demo-sms-")).length, 8);
+  assert.equal(data.price_alerts.filter((alert) => alert.demo_key).length, 3);
 });

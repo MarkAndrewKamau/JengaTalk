@@ -15,6 +15,36 @@ export interface CompareParams {
   limit?: number
 }
 
+export interface QuoteRequestPayload {
+  quantity?: number
+  contractor_phone?: string
+  contractor_name?: string
+}
+
+export interface QuoteRequestResponse {
+  quote: {
+    id: string
+    supplier_product_id: string
+    supplier_id: string
+    supplier_code: string
+    supplier_name: string
+    material_id: string
+    material_name: string
+    unit: string
+    quantity: number
+    unit_price: number
+    estimated_total: number
+    contractor_name: string
+    contractor_phone?: string
+    status: string
+  }
+  notification: {
+    sent: boolean
+    status: string
+    error?: string
+  }
+}
+
 export const productsApi = {
   browse: (params?: { category?: string; q?: string; county?: string; active?: string }) =>
     apiClient.get<{ products: SupplierProduct[] }>('/products', { params }),
@@ -24,6 +54,9 @@ export const productsApi = {
 
   compare: (params: CompareParams) =>
     apiClient.get<{ material: Material; results: SupplierProduct[] }>('/products/compare', { params }),
+
+  requestQuote: (productId: string, payload?: QuoteRequestPayload) =>
+    apiClient.post<QuoteRequestResponse>(`/products/${productId}/quote`, payload || {}),
 
   add: (payload: Record<string, unknown>) =>
     apiClient.post<{ product: SupplierProduct }>('/products', payload),

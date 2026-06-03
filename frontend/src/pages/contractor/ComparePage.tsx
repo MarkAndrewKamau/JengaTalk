@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Filter, Star, Truck, CheckCircle, AlertCircle,
@@ -176,6 +176,25 @@ export function ComparePage() {
   // Backend /api/products/compare returns { material, results }
   const results: SupplierProduct[] = data?.data?.results || []
 
+  const quoteMutation = useMutation({
+    mutationFn: (product: SupplierProduct) =>
+      productsApi.requestQuote(product.id, {
+        quantity: product.min_order_qty || 1,
+        contractor_name: user?.name,
+        contractor_phone: user?.phone,
+      }),
+    onSuccess: ({ data }) => {
+      if (data.notification.sent) {
+        toast.success(`Quote request sent to ${data.quote.supplier_name}`)
+      } else {
+        toast.success(`Quote request saved for ${data.quote.supplier_name}`)
+      }
+    },
+    onError: () => {
+      toast.error('Could not request quote. Try again.')
+    },
+  })
+
   const handleSearch = () => {
     if (!search.trim()) return
     setSubmittedSearch(search)
@@ -336,7 +355,7 @@ export function ComparePage() {
                     pinned={pinned.includes(product.id)}
                     onPin={() => togglePin(product.id)}
                     onOrder={() => { setOrderModal(product); setOrderQty(String(product.min_order_qty || 1)) }}
-                    onQuote={() => { setOrderModal(product); setOrderQty(String(product.min_order_qty || 1)) }}
+                    onQuote={() => quoteMutation.mutate(product)}
                   />
                 ))}
               </div>

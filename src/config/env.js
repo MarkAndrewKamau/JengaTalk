@@ -37,6 +37,7 @@ const env = {
   jwtSecret: process.env.JWT_SECRET || "dev-secret-change-me",
   jwtExpiresInSeconds: Number(process.env.JWT_EXPIRES_IN_SECONDS || 86400),
   otpTtlMinutes: Number(process.env.OTP_TTL_MINUTES || 10),
+  demoOtpCode: process.env.DEMO_OTP_CODE || "",
   corsOrigins: String(process.env.CORS_ORIGINS || "")
     .split(",")
     .map((origin) => origin.trim())
@@ -44,6 +45,7 @@ const env = {
   smsShortcode: process.env.SMS_SHORTCODE || "20880",
   ussdCode: process.env.USSD_CODE || "*384*880#",
   dataFile: path.resolve(rootDir, process.env.DATA_FILE || "./data/jengalink-store.json"),
+  seedDemoOnStart: process.env.SEED_DEMO_ON_START === "true",
   africaTalking: {
     username: process.env.AT_USERNAME || "sandbox",
     apiKey: process.env.AT_API_KEY || "",

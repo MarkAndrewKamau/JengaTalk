@@ -257,29 +257,10 @@ npm run seed
 npm run dev
 ```
 
-#### Environment Variables
+The API starts on `http://localhost:4000` by default. Local data is persisted to `./data/jengalink-store.json`; delete it or run `npm run seed` to reset.
+Set `HOST=0.0.0.0` in production containers if your platform requires binding to all interfaces.
 
-```env
-NODE_ENV=development
-PORT=4000
-
-# Africa's Talking
-AT_USERNAME=sandbox          # Your AT username (use 'sandbox' for testing)
-AT_API_KEY=                  # Your AT API key from account.africastalking.com
-AT_SMS_FROM=                 # Sender ID or shortcode (leave empty for default)
-
-# Auth
-JWT_SECRET=change-me-in-production
-OTP_TTL_MINUTES=10
-
-# Data
-DATA_FILE=./data/jengalink-store.json
-
-# CORS (comma-separated origins for production)
-CORS_ORIGINS=https://jengatalk-eva6.onrender.com
-```
-
-### Frontend
+## Demo Flow
 
 ```bash
 cd frontend

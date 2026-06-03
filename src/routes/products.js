@@ -1,10 +1,12 @@
 const express = require("express");
 const { requireAuth } = require("../middleware/auth");
+const { asyncHandler } = require("../middleware/errors");
 const { assertHttp } = require("../utils/httpError");
 const { normalizeText } = require("../utils/text");
+const { normalizePhone } = require("../utils/phone");
 const { comparePrices, findMaterial, joinProduct } = require("../services/catalogService");
 
-function productRoutes({ store }) {
+function productRoutes({ store, smsService }) {
   const router = express.Router();
 
   router.get("/", (req, res) => {
@@ -77,6 +79,83 @@ function productRoutes({ store }) {
     res.status(201).json({ product: joinProduct(store, product) });
   });
 
+  router.post("/:id/quote", asyncHandler(async (req, res) => {
+    const supplierProduct = store.findById("supplier_products", req.params.id);
+    assertHttp(supplierProduct, 404, "Product not found");
+
+    const product = joinProduct(store, supplierProduct);
+    assertHttp(product.material && product.supplier, 404, "Product catalogue data not found");
+    assertHttp(product.is_active && product.supplier.is_active, 400, "Product is not available for quote requests");
+
+    const supplierUser = store.findById("users", product.supplier.user_id);
+    const contractorPhone = normalizePhone(req.user?.phone || req.body.contractor_phone || "");
+    const contractorName = req.user?.name || req.body.contractor_name || "Web contractor";
+    const quantity = Number(req.body.quantity || product.min_order_qty || 1);
+    assertHttp(Number.isFinite(quantity) && quantity > 0, 400, "Quantity must be greater than zero");
+
+    const quoteTotal = quantity * Number(product.price);
+    const quoteMessage = `Quote request: ${contractorName}${contractorPhone ? ` (${contractorPhone})` : ""} asked for ${quantity} ${product.material.unit} ${product.material.name} at KES ${product.price}/${product.material.unit}. Est total: KES ${quoteTotal.toLocaleString("en-KE")}.`;
+
+    const requestLog = store.insert("sms_logs", {
+      from_phone: contractorPhone || "web",
+      to_phone: supplierUser?.phone || product.supplier.contact_phone || "",
+      message: quoteMessage,
+      direction: "in",
+      message_type: "enquiry",
+      at_message_id: `quote-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      cost: "",
+      status: "quote_requested",
+      created_at: new Date().toISOString(),
+    });
+
+    let notification = {
+      sent: false,
+      status: "not_sent",
+      error: supplierUser?.phone ? "" : "Supplier contact phone not found",
+    };
+
+    if (supplierUser?.phone) {
+      try {
+        const result = await smsService.sendSms({
+          to: supplierUser.phone,
+          type: "enquiry",
+          message: quoteMessage,
+        });
+        notification = {
+          sent: result.status !== "failed",
+          status: result.status,
+          error: result.error || "",
+        };
+      } catch (error) {
+        notification = {
+          sent: false,
+          status: "failed",
+          error: error.message,
+        };
+      }
+    }
+
+    res.status(201).json({
+      quote: {
+        id: requestLog.id,
+        supplier_product_id: product.id,
+        supplier_id: product.supplier.id,
+        supplier_code: product.supplier.code,
+        supplier_name: product.supplier.business_name,
+        material_id: product.material.id,
+        material_name: product.material.name,
+        unit: product.material.unit,
+        quantity,
+        unit_price: Number(product.price),
+        estimated_total: quoteTotal,
+        contractor_name: contractorName,
+        contractor_phone: contractorPhone,
+        status: "requested",
+      },
+      notification,
+    });
+  }));
+
   router.put("/:id", requireAuth, (req, res) => {
     const product = store.findById("supplier_products", req.params.id);
     assertHttp(product, 404, "Product not found");
@@ -110,4 +189,3 @@ function productRoutes({ store }) {
 }
 
 module.exports = { productRoutes };
-
