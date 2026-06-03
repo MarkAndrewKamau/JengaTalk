@@ -1,19 +1,25 @@
 import { apiClient } from './client'
-import type { ApiResponse, PaginatedResponse, Supplier, SupplierProduct } from '../types'
+import type { Supplier, SupplierProduct } from '../types'
+
+// GET /api/suppliers            →  { suppliers: [...] }
+// GET /api/suppliers/:id        →  { supplier: {...} }
+// POST /api/suppliers           →  { supplier: {...} }
+// PUT /api/suppliers/:id        →  { supplier: {...} }
+// GET /api/suppliers/:id/products → { supplier: {...}, products: [...] }
 
 export const suppliersApi = {
-  list: (params?: { county?: string; search?: string; page?: number }) =>
-    apiClient.get<ApiResponse<PaginatedResponse<Supplier>>>('/suppliers', { params }),
+  list: (params?: { county?: string; q?: string }) =>
+    apiClient.get<{ suppliers: Supplier[] }>('/suppliers', { params }),
 
   get: (id: string) =>
-    apiClient.get<ApiResponse<Supplier>>(`/suppliers/${id}`),
+    apiClient.get<{ supplier: Supplier }>(`/suppliers/${id}`),
 
   create: (payload: Partial<Supplier>) =>
-    apiClient.post<ApiResponse<Supplier>>('/suppliers', payload),
+    apiClient.post<{ supplier: Supplier }>('/suppliers', payload),
 
   update: (id: string, payload: Partial<Supplier>) =>
-    apiClient.put<ApiResponse<Supplier>>(`/suppliers/${id}`, payload),
+    apiClient.put<{ supplier: Supplier }>(`/suppliers/${id}`, payload),
 
   getProducts: (id: string) =>
-    apiClient.get<ApiResponse<SupplierProduct[]>>(`/suppliers/${id}/products`),
+    apiClient.get<{ supplier: Supplier; products: SupplierProduct[] }>(`/suppliers/${id}/products`),
 }
