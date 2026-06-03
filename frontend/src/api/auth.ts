@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { ApiResponse, User } from '../types'
+import type { User } from '../types'
 
 export interface RegisterPayload {
   name: string
@@ -8,35 +8,22 @@ export interface RegisterPayload {
   county: string
 }
 
-export interface OTPPayload {
-  phone: string
-  otp: string
-}
-
-export interface LoginPayload {
-  phone: string
-  otp: string
-}
-
-export interface AuthTokenResponse {
-  user: User
-  token: string
-  refresh_token: string
-}
+// Backend returns data directly — no ApiResponse wrapper
 
 export const authApi = {
+  // POST /api/auth/register  →  { user, otp_sent, dev_otp? }
   register: (payload: RegisterPayload) =>
-    apiClient.post<ApiResponse<{ message: string }>>('/auth/register', payload),
+    apiClient.post<{ user: User; otp_sent: boolean; dev_otp?: string }>('/auth/register', payload),
 
-  verifyOTP: (payload: OTPPayload) =>
-    apiClient.post<ApiResponse<AuthTokenResponse>>('/auth/verify-otp', payload),
+  // POST /api/auth/verify-otp  →  { token, user }
+  verifyOTP: (payload: { phone: string; otp: string }) =>
+    apiClient.post<{ token: string; user: User }>('/auth/verify-otp', payload),
 
+  // POST /api/auth/login  →  { otp_sent, dev_otp? }
   login: (phone: string) =>
-    apiClient.post<ApiResponse<{ message: string }>>('/auth/login', { phone }),
+    apiClient.post<{ otp_sent: boolean; dev_otp?: string }>('/auth/login', { phone }),
 
-  refresh: (refresh_token: string) =>
-    apiClient.post<ApiResponse<{ token: string }>>('/auth/refresh', { refresh_token }),
-
-  me: () =>
-    apiClient.get<ApiResponse<User>>('/auth/me'),
+  // POST /api/auth/refresh  →  { token, user }
+  refresh: (token: string) =>
+    apiClient.post<{ token: string; user: User }>('/auth/refresh', { token }),
 }
