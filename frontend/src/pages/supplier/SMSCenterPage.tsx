@@ -86,15 +86,15 @@ export function SMSCenterPage() {
   const broadcastMutation = useMutation({
     mutationFn: ({ message, scheduled_at }: { message: string; scheduled_at?: string }) =>
       smsApi.broadcast(message, scheduled_at || undefined),
-    onSuccess: (res) => {
-      toast.success(`Broadcast sent to ${res.data.data.sent} contractors`)
+    onSuccess: () => {
+      toast.success('Broadcast queued — contractors will be notified')
       setBroadcastText('')
       setScheduledAt('')
     },
     onError: () => toast.error('Failed to send broadcast'),
   })
 
-  const smsLogs: SMSLog[] = data?.data?.data?.data || []
+  const smsLogs: SMSLog[] = data?.data?.logs || []
 
   return (
     <div className="flex flex-col min-h-full">
