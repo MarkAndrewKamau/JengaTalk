@@ -179,3 +179,34 @@ test("fails SMS send when Africa's Talking rejects recipient status", async (t) 
     /InvalidSenderId/
   );
 });
+
+test("exposes known SMS provider failures as JSON errors", async (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "jengalink-"));
+  const store = new JsonStore({ filePath: path.join(dir, "store.json") });
+  const app = createApp({
+    store,
+    smsService: {
+      sendSms: async () => {
+        const { HttpError } = require("../src/utils/httpError");
+        throw new HttpError(502, "Africa's Talking SMS was not accepted: +25474XXXX435=InvalidSenderId");
+      },
+    },
+  });
+  const server = await new Promise((resolve) => {
+    const instance = app.listen(0, "127.0.0.1", () => resolve(instance));
+  });
+  t.after(() => server.close());
+
+  const { response, body } = await jsonFetch(`http://127.0.0.1:${server.address().port}/api/auth/register`, {
+    method: "POST",
+    body: JSON.stringify({
+      phone: "+254742537435",
+      name: "SMS Tester",
+      role: "contractor",
+      county: "Nairobi",
+    }),
+  });
+
+  assert.equal(response.status, 502);
+  assert.match(body.error.message, /InvalidSenderId/);
+});

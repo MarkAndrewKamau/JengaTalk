@@ -41,7 +41,7 @@ async function sendViaAfricasTalking({ recipients, text, from }) {
 
   if (!response.ok) {
     const message = result?.SMSMessageData?.Message || result?.errorMessage || raw || response.statusText;
-    throw new Error(`Africa's Talking SMS failed: ${message}`);
+    throw new HttpError(502, `Africa's Talking SMS failed: ${message}`);
   }
 
   const atRecipients = result?.SMSMessageData?.Recipients || [];
