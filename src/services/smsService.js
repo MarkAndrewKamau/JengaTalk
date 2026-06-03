@@ -103,7 +103,7 @@ function createSmsService({ store }) {
         providerResult = await sendViaAfricasTalking({ recipients, text, from });
       } catch (err) {
         console.error("[SMS] AT send failed:", err.message);
-        // Log the failed attempt so outbound count reflects reality
+        // Log the failure — never throw so callers (register, orders, inbound) keep working
         for (const phone of recipients) {
           store.insert("sms_logs", {
             from_phone: from,
@@ -117,8 +117,12 @@ function createSmsService({ store }) {
             created_at: new Date().toISOString(),
           });
         }
-        // Surface the error so callers know SMS didn't go through
-        throw err;
+        return {
+          provider: "africas-talking",
+          status: "failed",
+          error: err.message,
+          recipients: recipients.map((phone) => ({ phone, status: "failed" })),
+        };
       }
     }
 
