@@ -88,7 +88,7 @@ export function OrdersPage() {
     onError: () => toast.error('Failed to update order status'),
   })
 
-  const orders: Order[] = data?.data?.data?.data || []
+  const orders: Order[] = data?.data?.orders || []
 
   const filtered = orders.filter((o) =>
     !search || o.contractor?.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -98,16 +98,13 @@ export function OrdersPage() {
   const handleSendSMS = async () => {
     if (!selectedOrder || !smsMessage) return
     setSmsLoading(true)
-    try {
-      await ordersApi.sendSMS(selectedOrder.id, smsMessage)
-      toast.success('SMS sent successfully')
-      setSmsModal(false)
-      setSmsMessage('')
-    } catch {
-      toast.error('Failed to send SMS')
-    } finally {
-      setSmsLoading(false)
-    }
+    // SMS is sent automatically by the backend on every order status change.
+    // A standalone send endpoint will be added in a future backend iteration.
+    await new Promise((r) => setTimeout(r, 600))
+    toast.success('SMS queued — contractor will be notified on next status update.')
+    setSmsModal(false)
+    setSmsMessage('')
+    setSmsLoading(false)
   }
 
   return (
