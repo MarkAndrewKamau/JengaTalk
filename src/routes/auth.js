@@ -29,15 +29,24 @@ function authRoutes({ store, smsService }) {
     };
 
     const user = existing ? store.update("users", existing.id, payload) : store.insert("users", payload);
-    await smsService.sendSms({
-      to: phone,
-      type: "otp",
-      message: `Your ${env.appName} verification code is ${otp}. Valid for ${env.otpTtlMinutes} minutes. Do not share.`,
-    });
+    let smsSent = false;
+    let smsError = null;
+    try {
+      await smsService.sendSms({
+        to: phone,
+        type: "otp",
+        message: `Your ${env.appName} verification code is ${otp}. Valid for ${env.otpTtlMinutes} minutes. Do not share.`,
+      });
+      smsSent = true;
+    } catch (err) {
+      console.error("[auth/register] OTP SMS failed:", err.message);
+      smsError = err.message;
+    }
 
     res.status(existing ? 200 : 201).json({
       user: { id: user.id, phone: user.phone, name: user.name, role: user.role, county: user.county },
-      otp_sent: true,
+      otp_sent: smsSent,
+      sms_error: env.nodeEnv !== "production" ? smsError : undefined,
       dev_otp: env.nodeEnv === "production" ? undefined : otp,
     });
   }));
@@ -65,12 +74,24 @@ function authRoutes({ store, smsService }) {
     assertHttp(user, 404, "User not found");
     const otp = generateOtp();
     store.update("users", user.id, { otp_code: otp, otp_expires: otpExpiry() });
-    await smsService.sendSms({
-      to: phone,
-      type: "otp",
-      message: `Your ${env.appName} login code is ${otp}. Valid for ${env.otpTtlMinutes} minutes.`,
+    let smsSent = false;
+    let smsError = null;
+    try {
+      await smsService.sendSms({
+        to: phone,
+        type: "otp",
+        message: `Your ${env.appName} login code is ${otp}. Valid for ${env.otpTtlMinutes} minutes.`,
+      });
+      smsSent = true;
+    } catch (err) {
+      console.error("[auth/login] OTP SMS failed:", err.message);
+      smsError = err.message;
+    }
+    res.json({
+      otp_sent: smsSent,
+      sms_error: env.nodeEnv !== "production" ? smsError : undefined,
+      dev_otp: env.nodeEnv === "production" ? undefined : otp,
     });
-    res.json({ otp_sent: true, dev_otp: env.nodeEnv === "production" ? undefined : otp });
   }));
 
   router.post("/refresh", (req, res) => {
