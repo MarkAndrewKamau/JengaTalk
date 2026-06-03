@@ -33,7 +33,7 @@ function LiveFeed() {
     queryFn: () => smsApi.inbox({ page: 1 }),
     refetchInterval: 30_000,
   })
-  const items = smsData?.data?.data?.data || []
+  const items = smsData?.data?.logs || []
 
   return (
     <Card className="h-full">
@@ -122,17 +122,13 @@ export function OverviewPage() {
 
   const { data: ordersData, isLoading: ordersLoading } = useQuery({
     queryKey: ['orders-recent'],
-    queryFn: () => ordersApi.list({ page: 1 }),
+    queryFn: () => ordersApi.list(),
   })
 
-  const { data: revenueData } = useQuery({
-    queryKey: ['analytics-revenue'],
-    queryFn: () => analyticsApi.revenue({ period: 'week' }),
-  })
-
-  const kpis = kpiData?.data?.data
-  const orders = ordersData?.data?.data?.data || []
-  const revenue = revenueData?.data?.data || demoRevenue
+  // Backend returns { overview: {...} } and { orders: [...] }
+  const kpis = kpiData?.data?.overview
+  const orders = ordersData?.data?.orders || []
+  const revenue = demoRevenue // backend revenue is aggregate totals; use demo for time-series chart
 
   const handleOrderAction = async (order: Order, action: string) => {
     // Will be handled with backend integration
@@ -150,8 +146,7 @@ export function OverviewPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
           <KPICard
             title="Orders Today"
-            value={kpis?.orders_today ?? 0}
-            change={kpis?.orders_today_change}
+            value={kpis?.total_orders_today ?? 0}
             icon={<ShoppingCart size={18} className="text-primary" />}
             iconBg="bg-primary/10"
             index={0}
@@ -159,7 +154,6 @@ export function OverviewPage() {
           <KPICard
             title="Revenue This Week"
             value={kpis?.revenue_this_week ?? 0}
-            change={kpis?.revenue_change}
             icon={<DollarSign size={18} className="text-success" />}
             iconBg="bg-success/10"
             prefix="KES "
@@ -168,7 +162,6 @@ export function OverviewPage() {
           <KPICard
             title="Pending Deliveries"
             value={kpis?.pending_deliveries ?? 0}
-            change={kpis?.deliveries_change}
             icon={<Truck size={18} className="text-warning" />}
             iconBg="bg-warning/10"
             index={2}
@@ -176,7 +169,6 @@ export function OverviewPage() {
           <KPICard
             title="New SMS Enquiries"
             value={kpis?.new_enquiries ?? 0}
-            change={kpis?.enquiries_change}
             icon={<MessageSquare size={18} className="text-blue-500" />}
             iconBg="bg-blue-500/10"
             index={3}
