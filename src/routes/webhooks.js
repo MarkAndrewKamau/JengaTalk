@@ -31,6 +31,10 @@ function webhookRoutes({ store, smsCommandService, ussdService, smsService }) {
     res.type("text/plain").send(response);
   }));
 
+  router.post("/ussd/events", (req, res) => {
+    res.json({ ok: true });
+  });
+
   router.post("/voice/callback", asyncHandler(async (req, res) => {
     const orderId = req.body.orderId || req.body.order_id;
     const digits = String(req.body.dtmfDigits || req.body.digits || req.body.Digits || "");
