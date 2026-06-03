@@ -26,7 +26,18 @@ function createApp(overrides = {}) {
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ extended: false }));
   app.use((req, res, next) => {
-    res.setHeader("Access-Control-Allow-Origin", req.get("origin") || "*");
+    const origin = req.get("origin");
+    const allowedOrigin =
+      env.corsOrigins.length === 0 || !origin
+        ? origin || "*"
+        : env.corsOrigins.includes(origin)
+          ? origin
+          : "";
+
+    if (allowedOrigin) {
+      res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
+      res.setHeader("Vary", "Origin");
+    }
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Demo-User-Phone");
     if (req.method === "OPTIONS") return res.sendStatus(204);
@@ -69,4 +80,3 @@ function createApp(overrides = {}) {
 }
 
 module.exports = { createApp };
-

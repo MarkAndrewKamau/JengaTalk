@@ -1,5 +1,6 @@
 const express = require("express");
 const { requireAuth } = require("../middleware/auth");
+const { asyncHandler } = require("../middleware/errors");
 const { assertHttp } = require("../utils/httpError");
 const { createOrder, getOrderDetail, updateOrderStatus } = require("../services/orderService");
 
@@ -14,10 +15,10 @@ function canSeeOrder(user, order) {
 function orderRoutes({ store, smsService }) {
   const router = express.Router();
 
-  router.post("/", async (req, res) => {
+  router.post("/", asyncHandler(async (req, res) => {
     const order = await createOrder(store, smsService, req.body);
     res.status(201).json({ order });
-  });
+  }));
 
   router.get("/", requireAuth, (req, res) => {
     const supplierForUser = store.all("suppliers").find((supplier) => Number(supplier.user_id) === Number(req.user.id));
@@ -47,7 +48,7 @@ function orderRoutes({ store, smsService }) {
     res.json({ order });
   });
 
-  router.put("/:id/status", requireAuth, async (req, res) => {
+  router.put("/:id/status", requireAuth, asyncHandler(async (req, res) => {
     const order = getOrderDetail(store, req.params.id);
     assertHttp(order, 404, "Order not found");
     assertHttp(
@@ -57,9 +58,9 @@ function orderRoutes({ store, smsService }) {
     );
     const updated = await updateOrderStatus(store, smsService, req.params.id, req.body.status, req.body.note);
     res.json({ order: updated });
-  });
+  }));
 
-  router.post("/:id/cancel", requireAuth, async (req, res) => {
+  router.post("/:id/cancel", requireAuth, asyncHandler(async (req, res) => {
     const order = getOrderDetail(store, req.params.id);
     assertHttp(order, 404, "Order not found");
     assertHttp(
@@ -70,10 +71,9 @@ function orderRoutes({ store, smsService }) {
     assertHttp(["pending", "confirmed"].includes(order.status), 400, "Only pending or confirmed orders can be cancelled");
     const updated = await updateOrderStatus(store, smsService, req.params.id, "cancelled", req.body.reason || "Cancelled");
     res.json({ order: updated });
-  });
+  }));
 
   return router;
 }
 
 module.exports = { orderRoutes };
-

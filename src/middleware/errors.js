@@ -4,6 +4,12 @@ function notFound(req, res, next) {
   next(new HttpError(404, `Route not found: ${req.method} ${req.originalUrl}`));
 }
 
+function asyncHandler(handler) {
+  return (req, res, next) => {
+    Promise.resolve(handler(req, res, next)).catch(next);
+  };
+}
+
 function errorHandler(err, req, res, next) {
   if (res.headersSent) return next(err);
 
@@ -23,5 +29,4 @@ function errorHandler(err, req, res, next) {
   return res.status(status).json(payload);
 }
 
-module.exports = { notFound, errorHandler };
-
+module.exports = { notFound, errorHandler, asyncHandler };

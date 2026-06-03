@@ -2,21 +2,60 @@ const { env } = require("../config/env");
 const { normalizePhone } = require("../utils/phone");
 const { truncateSms } = require("../utils/text");
 
-function createSmsService({ store }) {
-  let atSms = null;
+function getSmsApiUrl() {
+  if (env.africaTalking.smsApiUrl) return env.africaTalking.smsApiUrl;
+  if (env.africaTalking.username === "sandbox") {
+    return "https://api.sandbox.africastalking.com/version1/messaging";
+  }
+  return "https://api.africastalking.com/version1/messaging";
+}
 
-  if (env.africaTalking.apiKey) {
-    try {
-      const africastalking = require("africastalking");
-      atSms = africastalking({
-        username: env.africaTalking.username,
-        apiKey: env.africaTalking.apiKey,
-      }).SMS;
-    } catch (error) {
-      console.warn("Africa's Talking SDK not installed; using mock SMS sender.");
-    }
+async function sendViaAfricasTalking({ recipients, text, from }) {
+  const body = new URLSearchParams({
+    username: env.africaTalking.username,
+    to: recipients.join(","),
+    message: text,
+  });
+  if (from) body.set("from", from);
+
+  const response = await fetch(getSmsApiUrl(), {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/x-www-form-urlencoded",
+      apiKey: env.africaTalking.apiKey,
+    },
+    body,
+  });
+
+  const raw = await response.text();
+  let result = {};
+  try {
+    result = raw ? JSON.parse(raw) : {};
+  } catch (error) {
+    result = { raw };
   }
 
+  if (!response.ok) {
+    const message = result?.SMSMessageData?.Message || result?.errorMessage || raw || response.statusText;
+    throw new Error(`Africa's Talking SMS failed: ${message}`);
+  }
+
+  const atRecipients = result?.SMSMessageData?.Recipients || [];
+  return {
+    provider: "africas-talking",
+    status: "sent",
+    raw: result,
+    recipients: atRecipients.map((recipient) => ({
+      phone: recipient.number,
+      messageId: recipient.messageId,
+      status: recipient.status,
+      cost: recipient.cost,
+    })),
+  };
+}
+
+function createSmsService({ store }) {
   async function sendSms({ to, message, type = "alert", from = env.africaTalking.smsFrom }) {
     const recipients = Array.isArray(to) ? to.map(normalizePhone) : [normalizePhone(to)];
     const text = truncateSms(message);
@@ -29,20 +68,8 @@ function createSmsService({ store }) {
       })),
     };
 
-    if (atSms) {
-      const result = await atSms.send({ to: recipients, message: text, from });
-      const atRecipients = result?.SMSMessageData?.Recipients || [];
-      providerResult = {
-        provider: "africas-talking",
-        status: "sent",
-        raw: result,
-        recipients: atRecipients.map((recipient) => ({
-          phone: recipient.number,
-          messageId: recipient.messageId,
-          status: recipient.status,
-          cost: recipient.cost,
-        })),
-      };
+    if (env.africaTalking.apiKey) {
+      providerResult = await sendViaAfricasTalking({ recipients, text, from });
     }
 
     for (const recipient of providerResult.recipients) {
@@ -65,5 +92,4 @@ function createSmsService({ store }) {
   return { sendSms };
 }
 
-module.exports = { createSmsService };
-
+module.exports = { createSmsService, getSmsApiUrl, sendViaAfricasTalking };
