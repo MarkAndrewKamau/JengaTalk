@@ -9,6 +9,10 @@ const { asyncHandler } = require("../middleware/errors");
 function authRoutes({ store, smsService }) {
   const router = express.Router();
 
+  function createOtp() {
+    return env.demoOtpCode || generateOtp();
+  }
+
   function applySmsResult(result) {
     if (result?.status === "failed") {
       return { sent: false, error: result.error || "SMS provider rejected the message" };
@@ -22,7 +26,7 @@ function authRoutes({ store, smsService }) {
     assertHttp(phone, 400, "Phone is required");
     assertHttp(["supplier", "contractor", "admin"].includes(role), 400, "Invalid role");
 
-    const otp = generateOtp();
+    const otp = createOtp();
     const existing = store.all("users").find((user) => user.phone === phone);
     const payload = {
       phone,
@@ -81,7 +85,7 @@ function authRoutes({ store, smsService }) {
     const phone = normalizePhone(req.body.phone);
     const user = store.all("users").find((candidate) => candidate.phone === phone);
     assertHttp(user, 404, "User not found");
-    const otp = generateOtp();
+    const otp = createOtp();
     store.update("users", user.id, { otp_code: otp, otp_expires: otpExpiry() });
     let smsSent = false;
     let smsError = null;

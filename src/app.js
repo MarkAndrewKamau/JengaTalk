@@ -13,9 +13,14 @@ const { webhookRoutes } = require("./routes/webhooks");
 const { createSmsService } = require("./services/smsService");
 const { createSmsCommandService } = require("./services/smsCommandService");
 const { createUssdService } = require("./services/ussdService");
+const { seedDemo } = require("../scripts/seed-demo");
 
 function createApp(overrides = {}) {
   const store = overrides.store || new JsonStore({ filePath: env.dataFile });
+  if (!overrides.store && env.seedDemoOnStart) {
+    const summary = seedDemo(store);
+    console.log("Seeded demo data on start", summary.demo);
+  }
   const smsService = overrides.smsService || createSmsService({ store });
   const smsCommandService = overrides.smsCommandService || createSmsCommandService({ store, smsService });
   const ussdService = overrides.ussdService || createUssdService({ store, smsService });
@@ -55,6 +60,7 @@ function createApp(overrides = {}) {
   });
 
   app.get("/api/health", (req, res) => {
+    const data = store.read();
     res.json({
       ok: true,
       service: env.appName,
@@ -64,6 +70,14 @@ function createApp(overrides = {}) {
       at_key_set: !!env.africaTalking.apiKey,
       at_key_prefix: env.africaTalking.apiKey ? env.africaTalking.apiKey.slice(0, 8) + "..." : null,
       sms_from: env.africaTalking.smsFrom,
+      seed_demo_on_start: env.seedDemoOnStart,
+      counts: {
+        users: data.users.length,
+        suppliers: data.suppliers.length,
+        materials: data.materials.length,
+        products: data.supplier_products.length,
+        orders: data.orders.length,
+      },
     });
   });
 
@@ -81,7 +95,7 @@ function createApp(overrides = {}) {
 
   app.use("/api/auth", authRoutes({ store, smsService }));
   app.use("/api/suppliers", supplierRoutes({ store }));
-  app.use("/api/products", productRoutes({ store }));
+  app.use("/api/products", productRoutes({ store, smsService }));
   app.use("/api/orders", orderRoutes({ store, smsService }));
   app.use("/api/alerts", alertRoutes({ store }));
   app.use("/api/analytics", analyticsRoutes({ store }));

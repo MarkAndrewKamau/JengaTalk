@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Filter, Star, Truck, CheckCircle, AlertCircle,
@@ -17,6 +17,7 @@ import { Card, CardHeader, CardTitle } from '../../components/ui/Card'
 import { PageLoader } from '../../components/ui/Spinner'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { productsApi } from '../../api/products'
+import { useAuthStore } from '../../stores/authStore'
 import { formatCurrency } from '../../utils/format'
 import type { SupplierProduct } from '../../types'
 import toast from 'react-hot-toast'
@@ -157,6 +158,7 @@ export function ComparePage() {
   const [orderAddress, setOrderAddress] = useState('')
   const [alertModal, setAlertModal] = useState(false)
   const [alertPrice, setAlertPrice] = useState('')
+  const user = useAuthStore((state) => state.user)
 
   const filtered = SUGGESTIONS.filter((s) => s.toLowerCase().includes(search.toLowerCase()))
 
@@ -171,6 +173,25 @@ export function ComparePage() {
 
   // Backend /api/products/compare returns { material, results }
   const results: SupplierProduct[] = data?.data?.results || []
+
+  const quoteMutation = useMutation({
+    mutationFn: (product: SupplierProduct) =>
+      productsApi.requestQuote(product.id, {
+        quantity: product.min_order_qty || 1,
+        contractor_name: user?.name,
+        contractor_phone: user?.phone,
+      }),
+    onSuccess: ({ data }) => {
+      if (data.notification.sent) {
+        toast.success(`Quote request sent to ${data.quote.supplier_name}`)
+      } else {
+        toast.success(`Quote request saved for ${data.quote.supplier_name}`)
+      }
+    },
+    onError: () => {
+      toast.error('Could not request quote. Try again.')
+    },
+  })
 
   const handleSearch = () => {
     if (!search.trim()) return
@@ -332,7 +353,7 @@ export function ComparePage() {
                     pinned={pinned.includes(product.id)}
                     onPin={() => togglePin(product.id)}
                     onOrder={() => { setOrderModal(product); setOrderQty(String(product.min_order_qty || 1)) }}
-                    onQuote={() => toast.success('Quote request sent via SMS to supplier')}
+                    onQuote={() => quoteMutation.mutate(product)}
                   />
                 ))}
               </div>

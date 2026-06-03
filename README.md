@@ -7,11 +7,18 @@ Phase 2 backend for the JengaLink construction materials platform. It exposes th
 ```bash
 npm install
 npm run seed
+npm run seed:catalog
+npm run seed:demo
 npm run dev
 ```
 
 The API starts on `http://localhost:4000` by default. Local data is persisted to `./data/jengalink-store.json`; delete it or run `npm run seed` to reset.
 Set `HOST=0.0.0.0` in production containers if your platform requires binding to all interfaces.
+
+`npm run seed` resets the whole local data store. `npm run seed:catalog` only upserts demo materials, suppliers, and supplier product listings without clearing users, orders, or SMS logs. `npm run seed:demo` runs the catalogue seeder and adds manual testing contractors, orders, delivery timelines, SMS logs, and price alerts.
+
+On Render, set `SEED_DEMO_ON_START=true` for hackathon/manual testing so demo users and orders are upserted each time the backend starts.
+If live SMS is not ready, set `DEMO_OTP_CODE=123456` for the demo and type that OTP after login/register.
 
 ## Demo Flow
 
