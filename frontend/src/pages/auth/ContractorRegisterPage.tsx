@@ -50,8 +50,8 @@ export function ContractorRegisterPage() {
     setLoading(true)
     try {
       const res = await authApi.verifyOTP({ phone: form.phone, otp })
-      const { user, token, refresh_token } = res.data.data
-      setAuth(user, token, refresh_token)
+      const { user, token } = res.data
+      setAuth(user, token)
       toast.success(`Welcome to JengaLink, ${user.name}!`)
       navigate('/contractor/compare')
     } catch {
