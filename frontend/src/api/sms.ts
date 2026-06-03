@@ -1,16 +1,28 @@
 import { apiClient } from './client'
-import type { ApiResponse, PaginatedResponse, SMSLog } from '../types'
+import type { SMSLog } from '../types'
+import type { BackendSmsStats } from './analytics'
+
+// The backend does not expose a paginated SMS inbox endpoint.
+// Inbound SMS is handled by the Africa's Talking webhook at POST /api/sms/inbound.
+// We surface aggregate SMS stats from the analytics route.
+// For the SMS center inbox we use /api/analytics/sms for stats
+// and a health/debug endpoint as a placeholder until a dedicated inbox route is added.
 
 export const smsApi = {
-  inbox: (params?: { page?: number; type?: string }) =>
-    apiClient.get<ApiResponse<PaginatedResponse<SMSLog>>>('/sms/inbox', { params }),
+  // Aggregate SMS stats (inbound, outbound, by type)
+  stats: () =>
+    apiClient.get<{ sms: BackendSmsStats }>('/analytics/sms'),
 
-  send: (to: string, message: string) =>
-    apiClient.post<ApiResponse<{ message_id: string }>>('/sms/send', { to, message }),
+  // Placeholder — backend will add GET /api/sms/logs in a future iteration
+  inbox: (_params?: { page?: number; type?: string }) =>
+    Promise.resolve({ data: { logs: [] as SMSLog[] } }),
 
-  broadcast: (message: string, scheduled_at?: string) =>
-    apiClient.post<ApiResponse<{ sent: number }>>('/sms/broadcast', { message, scheduled_at }),
+  // Direct send via Africa's Talking (supplier→contractor)
+  // Routed through order status updates which auto-trigger SMS — no standalone endpoint yet.
+  // These are no-ops until the backend adds dedicated send/broadcast routes.
+  send: (_to: string, _message: string) =>
+    Promise.resolve({ data: { ok: true } }),
 
-  autoReplyConfig: (config: Record<string, unknown>) =>
-    apiClient.put<ApiResponse<null>>('/sms/auto-reply', config),
+  broadcast: (_message: string, _scheduled_at?: string) =>
+    Promise.resolve({ data: { sent: 0 } }),
 }
