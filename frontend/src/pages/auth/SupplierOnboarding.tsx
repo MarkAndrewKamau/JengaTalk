@@ -8,6 +8,7 @@ import { AuthLayout } from './AuthLayout'
 import { Button } from '../../components/ui/Button'
 import { Input, Select } from '../../components/ui/Input'
 import { authApi } from '../../api/auth'
+import { useAuthStore } from '../../stores/authStore'
 import toast from 'react-hot-toast'
 
 const KENYA_COUNTIES = [
@@ -56,6 +57,7 @@ export function SupplierOnboarding() {
   const [loading, setLoading] = useState(false)
   const [otpSent, setOtpSent] = useState(false)
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', ''])
+  const { setAuth } = useAuthStore()
 
   const [data, setData] = useState<OnboardingData>({
     name: '', phone: '', business_name: '', county: 'Nairobi', town: '',
@@ -112,7 +114,8 @@ export function SupplierOnboarding() {
     const otp = otpDigits.join('')
     setLoading(true)
     try {
-      await authApi.verifyOTP({ phone: data.phone, otp })
+      const res = await authApi.verifyOTP({ phone: data.phone, otp })
+      setAuth(res.data.user, res.data.token)
       toast.success('Account created! Welcome to JengaLink.')
       navigate('/supplier/overview')
     } catch {
