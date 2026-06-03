@@ -63,7 +63,7 @@ export function AnalyticsPage() {
 
   useQuery({
     queryKey: ['analytics-revenue', 'month'],
-    queryFn: () => analyticsApi.revenue({ period: 'month' }),
+    queryFn: () => analyticsApi.revenue(),
   })
 
 
