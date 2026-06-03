@@ -47,3 +47,5 @@ services:
         sync: false
       - key: AT_USSD_CODE
         sync: false
+      - key: CORS_ORIGINS
+        value: https://jengatalk-eva6.onrender.com
