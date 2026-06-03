@@ -43,7 +43,7 @@ function DeliveryCard({ order, onSendAlert, onUpdateStatus }: DeliveryCardProps)
     >
       <div className="flex items-start justify-between mb-3">
         <div>
-          <p className="font-mono text-xs text-primary font-bold">#{order.id.slice(-6).toUpperCase()}</p>
+          <p className="font-mono text-xs text-primary font-bold">#{String(order.id).slice(-6).toUpperCase()}</p>
           <p className="font-semibold text-secondary text-sm mt-0.5">{order.contractor?.name || 'Contractor'}</p>
         </div>
         <div className="text-right">
@@ -206,11 +206,11 @@ export function DeliveriesPage() {
 
       {/* SMS Alert Modal */}
       <Modal open={!!alertOrder} onClose={() => { setAlertOrder(null); setAlertText('') }}
-        title={`Send Alert — Order #${alertOrder?.id.slice(-6).toUpperCase() || ''}`} size="md">
+        title={`Send Alert — Order #${String(alertOrder?.id ?? "").slice(-6).toUpperCase() || ''}`} size="md">
         <div className="p-6 flex flex-col gap-4">
           <div className="grid gap-2">
             {SMS_ALERTS.map((a) => (
-              <button key={a.label} onClick={() => setAlertText(a.text.replace('{id}', alertOrder?.id.slice(-6).toUpperCase() || ''))}
+              <button key={a.label} onClick={() => setAlertText(a.text.replace('{id}', String(alertOrder?.id ?? "").slice(-6).toUpperCase() || ''))}
                 className="text-left px-4 py-3 bg-gray-50 hover:bg-primary/5 border border-gray-200 hover:border-primary/30 rounded-xl text-sm transition-colors">
                 <span className="font-semibold text-secondary">{a.label}</span>
                 <p className="text-xs text-concrete mt-0.5 line-clamp-1">{a.text}</p>

@@ -83,7 +83,7 @@ function OrderRow({ order, onAction }: { order: Order; onAction: (order: Order, 
       animate={{ opacity: 1 }}
       className="border-b border-gray-50 hover:bg-gray-50/80 transition-colors group"
     >
-      <td className="py-3.5 px-4 text-sm font-mono text-concrete">#{order.id.slice(-6).toUpperCase()}</td>
+      <td className="py-3.5 px-4 text-sm font-mono text-concrete">#{String(order.id).slice(-6).toUpperCase()}</td>
       <td className="py-3.5 px-4 text-sm font-medium text-secondary">{order.contractor?.name || '—'}</td>
       <td className="py-3.5 px-4 text-sm text-concrete">{order.contractor?.phone || '—'}</td>
       <td className="py-3.5 px-4 text-sm text-secondary">{order.items?.length || 0} item(s)</td>

@@ -83,7 +83,7 @@ export function ContractorOrdersPage() {
                       transition={{ delay: i * 0.03 }}
                       className="border-b border-gray-50 hover:bg-gray-50/80 cursor-pointer transition-colors"
                       onClick={() => setSelected(order)}>
-                      <td className="py-3.5 px-4 text-sm font-mono text-primary font-semibold">#{order.id.slice(-6).toUpperCase()}</td>
+                      <td className="py-3.5 px-4 text-sm font-mono text-primary font-semibold">#{String(order.id).slice(-6).toUpperCase()}</td>
                       <td className="py-3.5 px-4 text-sm font-medium text-secondary">{order.supplier?.business_name || '—'}</td>
                       <td className="py-3.5 px-4 text-sm text-concrete">{order.items?.length || 0}</td>
                       <td className="py-3.5 px-4 text-sm font-bold text-secondary">{formatCurrency(order.total_amount)}</td>
@@ -99,7 +99,7 @@ export function ContractorOrdersPage() {
         )}
       </div>
 
-      <Drawer open={!!selected} onClose={() => setSelected(null)} title={`Order #${selected?.id.slice(-6).toUpperCase() || ''}`}>
+      <Drawer open={!!selected} onClose={() => setSelected(null)} title={`Order #${String(selected?.id ?? "").slice(-6).toUpperCase() || ''}`}>
         {selected && (
           <div className="p-6 flex flex-col gap-5">
             {/* Timeline */}
