@@ -151,7 +151,7 @@ export function OrdersPage() {
                         onClick={() => setSelectedOrder(order)}
                       >
                         <td className="py-3.5 px-4 text-sm font-mono text-primary font-semibold">
-                          #{order.id.slice(-6).toUpperCase()}
+                          #{String(order.id).slice(-6).toUpperCase()}
                         </td>
                         <td className="py-3.5 px-4">
                           <p className="text-sm font-medium text-secondary">{order.contractor?.name || '—'}</p>
@@ -175,7 +175,7 @@ export function OrdersPage() {
       </div>
 
       {/* Order Detail Drawer */}
-      <Drawer open={!!selectedOrder} onClose={() => setSelectedOrder(null)} title={selectedOrder ? `Order #${selectedOrder.id.slice(-6).toUpperCase()}` : ''}>
+      <Drawer open={!!selectedOrder} onClose={() => setSelectedOrder(null)} title={selectedOrder ? `Order #${String(selectedOrder.id).slice(-6).toUpperCase()}` : ''}>
         {selectedOrder && (
           <div className="p-6 flex flex-col gap-5">
             {/* Contractor info */}
