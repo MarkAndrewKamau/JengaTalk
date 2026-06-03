@@ -9,6 +9,13 @@ const { asyncHandler } = require("../middleware/errors");
 function authRoutes({ store, smsService }) {
   const router = express.Router();
 
+  function applySmsResult(result) {
+    if (result?.status === "failed") {
+      return { sent: false, error: result.error || "SMS provider rejected the message" };
+    }
+    return { sent: true, error: null };
+  }
+
   router.post("/register", asyncHandler(async (req, res) => {
     const phone = normalizePhone(req.body.phone);
     const role = req.body.role || "contractor";
@@ -32,12 +39,14 @@ function authRoutes({ store, smsService }) {
     let smsSent = false;
     let smsError = null;
     try {
-      await smsService.sendSms({
+      const smsResult = await smsService.sendSms({
         to: phone,
         type: "otp",
         message: `Your ${env.appName} verification code is ${otp}. Valid for ${env.otpTtlMinutes} minutes. Do not share.`,
       });
-      smsSent = true;
+      const result = applySmsResult(smsResult);
+      smsSent = result.sent;
+      smsError = result.error;
     } catch (err) {
       console.error("[auth/register] OTP SMS failed:", err.message);
       smsError = err.message;
@@ -77,12 +86,14 @@ function authRoutes({ store, smsService }) {
     let smsSent = false;
     let smsError = null;
     try {
-      await smsService.sendSms({
+      const smsResult = await smsService.sendSms({
         to: phone,
         type: "otp",
         message: `Your ${env.appName} login code is ${otp}. Valid for ${env.otpTtlMinutes} minutes.`,
       });
-      smsSent = true;
+      const result = applySmsResult(smsResult);
+      smsSent = result.sent;
+      smsError = result.error;
     } catch (err) {
       console.error("[auth/login] OTP SMS failed:", err.message);
       smsError = err.message;

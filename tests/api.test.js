@@ -180,15 +180,19 @@ test("fails SMS send when Africa's Talking rejects recipient status", async (t) 
   );
 });
 
-test("exposes known SMS provider failures as JSON errors", async (t) => {
+test("reports OTP as unsent when SMS provider returns a failed result", async (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "jengalink-"));
   const store = new JsonStore({ filePath: path.join(dir, "store.json") });
   const app = createApp({
     store,
     smsService: {
       sendSms: async () => {
-        const { HttpError } = require("../src/utils/httpError");
-        throw new HttpError(502, "Africa's Talking SMS was not accepted: +25474XXXX435=InvalidSenderId");
+        return {
+          provider: "africas-talking",
+          status: "failed",
+          error: "Africa's Talking SMS was not accepted: +25474XXXX435=InvalidSenderId",
+          recipients: [{ phone: "+254742537435", status: "failed" }],
+        };
       },
     },
   });
@@ -207,6 +211,6 @@ test("exposes known SMS provider failures as JSON errors", async (t) => {
     }),
   });
 
-  assert.equal(response.status, 502);
-  assert.match(body.error.message, /InvalidSenderId/);
+  assert.equal(response.status, 201);
+  assert.equal(body.otp_sent, false);
 });
