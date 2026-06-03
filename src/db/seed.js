@@ -18,7 +18,7 @@ const seedData = {
   users: [
     {
       id: 1,
-      phone: "+254711000001",
+      phone: "+254702258157",
       name: "Amina Wanjiku",
       role: "supplier",
       county: "nairobi",
@@ -29,7 +29,7 @@ const seedData = {
     },
     {
       id: 2,
-      phone: "+254711000002",
+      phone: "+254722160280",
       name: "Peter Otieno",
       role: "supplier",
       county: "nairobi",
@@ -355,4 +355,3 @@ function cloneSeed() {
 }
 
 module.exports = { seedData, cloneSeed };
-

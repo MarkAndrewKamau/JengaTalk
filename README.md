@@ -287,7 +287,7 @@ VITE_API_BASE_URL=https://jengatalk.onrender.com
 ### Authentication
 
 All protected endpoints require `Authorization: Bearer <token>`.
-For local development, pass `X-Demo-User-Phone: +254711000001` to authenticate as a seeded supplier.
+For local development, pass `X-Demo-User-Phone: +254702258157` to authenticate as a seeded supplier.
 
 | Method | Endpoint | Description |
 |---|---|---|

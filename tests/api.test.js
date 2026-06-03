@@ -180,7 +180,7 @@ test("returns JSON errors for invalid async order requests", async (t) => {
 
   const missing = await jsonFetch(`${baseUrl}/api/orders/999/status`, {
     method: "PUT",
-    headers: { "X-Demo-User-Phone": "+254711000001" },
+    headers: { "X-Demo-User-Phone": "+254702258157" },
     body: JSON.stringify({ status: "confirmed" }),
   });
   assert.equal(missing.response.status, 404);

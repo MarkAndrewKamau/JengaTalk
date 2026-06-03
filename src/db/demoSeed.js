@@ -214,7 +214,7 @@ const demoSmsLogs = [
   },
   {
     from_phone: "20880",
-    to_phone: "+254711000001",
+    to_phone: "+254702258157",
     message: "New order #1201 from Joseph Mwangi for 15 bag OPC Cement, 1 tonne River Sand. Total: KES 13,400.",
     direction: "out",
     message_type: "order",
@@ -284,4 +284,3 @@ const demoPriceAlerts = [
 ];
 
 module.exports = { demoContractors, demoOrders, demoSmsLogs, demoPriceAlerts };
-
