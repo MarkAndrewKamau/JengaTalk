@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { motion, useInView, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import {
   Search, ShoppingCart, Truck, Star, CheckCircle, MessageSquare,
@@ -8,6 +9,8 @@ import {
 } from 'lucide-react'
 import { Navbar } from '../../components/layout/Navbar'
 import { Button } from '../../components/ui/Button'
+import { suppliersApi } from '../../api/suppliers'
+import { productsApi } from '../../api/products'
 
 // ─── SMS Chat Animation ────────────────────────────────────────────────────────
 const smsConversation = [
@@ -53,7 +56,8 @@ function CounterStat({ end, suffix, label }: { end: number; suffix: string; labe
   const [count, setCount] = useState(0)
 
   useEffect(() => {
-    if (!inView) return
+    // Don't animate until we have real data
+    if (!inView || end === 0) return
     const duration = 2000
     const start = performance.now()
     const animate = (now: number) => {
@@ -67,8 +71,13 @@ function CounterStat({ end, suffix, label }: { end: number; suffix: string; labe
 
   return (
     <div ref={ref} className="text-center">
-      <div className="text-4xl font-display font-bold text-white mb-1">
-        {count.toLocaleString()}{suffix}
+      <div className="text-4xl font-display font-bold text-white mb-1 min-h-[44px] flex items-center justify-center">
+        {end === 0 ? (
+          // Loading skeleton
+          <span className="inline-block w-16 h-8 bg-white/20 rounded-lg animate-pulse" />
+        ) : (
+          <>{count.toLocaleString()}{suffix}</>
+        )}
       </div>
       <div className="text-white/60 text-sm">{label}</div>
     </div>
@@ -148,6 +157,24 @@ export function LandingPage() {
     const t = setInterval(() => setSmsKey((k) => k + 1), 12000)
     return () => clearInterval(t)
   }, [])
+
+  // Live platform stats from public API endpoints
+  const { data: suppliersData } = useQuery({
+    queryKey: ['landing-suppliers'],
+    queryFn: () => suppliersApi.list(),
+    staleTime: 5 * 60_000,
+  })
+  const { data: materialsData } = useQuery({
+    queryKey: ['landing-materials'],
+    queryFn: () => productsApi.materials(),
+    staleTime: 5 * 60_000,
+  })
+
+  const suppliers = suppliersData?.data?.suppliers ?? []
+  const supplierCount = suppliers.length
+  const ordersTotal = suppliers.reduce((sum: number, s: { total_orders?: number }) => sum + (s.total_orders || 0), 0)
+  const materialCount = materialsData?.data?.materials?.length ?? 0
+  const countyCount = new Set(suppliers.map((s: { county: string }) => s.county)).size
 
   return (
     <div className="min-h-screen bg-secondary">
@@ -367,10 +394,10 @@ export function LandingPage() {
       <section className="bg-primary py-12">
         <div className="max-w-5xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <CounterStat end={847} suffix="+" label="Suppliers Onboarded" />
-            <CounterStat end={12400} suffix="+" label="Orders Processed" />
-            <CounterStat end={3200} suffix="+" label="Materials Listed" />
-            <CounterStat end={28} suffix="" label="Counties Covered" />
+            <CounterStat end={supplierCount} suffix="" label="Suppliers Onboarded" />
+            <CounterStat end={ordersTotal} suffix="" label="Orders Processed" />
+            <CounterStat end={materialCount} suffix="" label="Materials Listed" />
+            <CounterStat end={countyCount} suffix="" label="Counties Covered" />
           </div>
         </div>
       </section>
@@ -607,7 +634,7 @@ export function LandingPage() {
       </section>
 
       {/* ── Testimonials ─────────────────────────────────────────── */}
-      <section className="py-24 bg-sand">
+      <section id="testimonials" className="py-24 bg-sand">
         <div className="max-w-6xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
