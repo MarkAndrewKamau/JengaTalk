@@ -37,10 +37,10 @@ export function ContractorOrdersPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['contractor-orders', filter],
-    queryFn: () => ordersApi.list({ status: filter === 'all' ? undefined : filter, role: 'contractor' }),
+    queryFn: () => ordersApi.list({ status: filter === 'all' ? undefined : filter }),
   })
 
-  const orders: Order[] = data?.data?.data?.data || []
+  const orders: Order[] = data?.data?.orders || []
 
   return (
     <div className="flex flex-col min-h-full">
