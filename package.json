@@ -1,19 +1,34 @@
 {
   "name": "jengatalk",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "JengaLink backend for construction materials price comparison, SMS ordering, and supplier workflows.",
+  "main": "src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "seed": "node scripts/seed.js",
+    "test": "node --test tests/*.test.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MarkAndrewKamau/JengaTalk.git"
   },
-  "keywords": [],
+  "keywords": [
+    "africas-talking",
+    "construction",
+    "sms",
+    "ussd",
+    "express"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
   "bugs": {
     "url": "https://github.com/MarkAndrewKamau/JengaTalk/issues"
   },
