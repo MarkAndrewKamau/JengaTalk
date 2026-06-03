@@ -14,9 +14,18 @@ function errorHandler(err, req, res, next) {
   if (res.headersSent) return next(err);
 
   const status = err.status || 500;
+  const message = err instanceof HttpError || status < 500 ? err.message : "Internal server error";
+  console.error("Request failed", {
+    method: req.method,
+    path: req.originalUrl,
+    status,
+    message: err.message,
+    details: err.details,
+  });
+
   const payload = {
     error: {
-      message: status >= 500 ? "Internal server error" : err.message,
+      message,
       status,
     },
   };
