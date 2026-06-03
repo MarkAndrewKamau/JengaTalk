@@ -38,6 +38,8 @@ export interface Supplier {
   total_orders: number
   is_active: boolean
   created_at: string
+  contact_phone?: string
+  contact_name?: string
 }
 
 // ─── Materials & Products ──────────────────────────────────────
