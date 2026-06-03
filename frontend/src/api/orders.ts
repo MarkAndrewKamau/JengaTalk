@@ -1,5 +1,11 @@
 import { apiClient } from './client'
-import type { ApiResponse, Order, OrderStatus, PaginatedResponse } from '../types'
+import type { Order, OrderStatus } from '../types'
+
+// POST /api/orders              →  { order: {...} }
+// GET  /api/orders              →  { orders: [...] }  (filtered by auth role)
+// GET  /api/orders/:id          →  { order: {...} }
+// PUT  /api/orders/:id/status   →  { order: {...} }
+// POST /api/orders/:id/cancel   →  { order: {...} }
 
 export interface PlaceOrderPayload {
   supplier_id: string
@@ -7,24 +13,24 @@ export interface PlaceOrderPayload {
   delivery_address: string
   delivery_date?: string
   payment_method: string
+  contractor_phone?: string
+  contractor_name?: string
+  contractor_county?: string
 }
 
 export const ordersApi = {
   place: (payload: PlaceOrderPayload) =>
-    apiClient.post<ApiResponse<Order>>('/orders', payload),
+    apiClient.post<{ order: Order }>('/orders', payload),
 
-  list: (params?: { status?: OrderStatus; page?: number; role?: 'supplier' | 'contractor' }) =>
-    apiClient.get<ApiResponse<PaginatedResponse<Order>>>('/orders', { params }),
+  list: (params?: { status?: OrderStatus }) =>
+    apiClient.get<{ orders: Order[] }>('/orders', { params }),
 
   get: (id: string) =>
-    apiClient.get<ApiResponse<Order>>(`/orders/${id}`),
+    apiClient.get<{ order: Order }>(`/orders/${id}`),
 
   updateStatus: (id: string, status: OrderStatus, note?: string) =>
-    apiClient.put<ApiResponse<Order>>(`/orders/${id}/status`, { status, note }),
+    apiClient.put<{ order: Order }>(`/orders/${id}/status`, { status, note }),
 
   cancel: (id: string, reason?: string) =>
-    apiClient.post<ApiResponse<null>>(`/orders/${id}/cancel`, { reason }),
-
-  sendSMS: (id: string, message: string, template?: string) =>
-    apiClient.post<ApiResponse<null>>(`/orders/${id}/sms`, { message, template }),
+    apiClient.post<{ order: Order }>(`/orders/${id}/cancel`, { reason }),
 }
