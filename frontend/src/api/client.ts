@@ -1,8 +1,12 @@
 import axios, { AxiosError } from 'axios'
 import { useAuthStore } from '../stores/authStore'
 
+// In development, Vite proxies /api → localhost:3000 (see vite.config.ts)
+// In production, VITE_API_BASE_URL = https://jengatalk.onrender.com
+const BASE = import.meta.env.VITE_API_BASE_URL ?? ''
+
 export const apiClient = axios.create({
-  baseURL: '/api',
+  baseURL: `${BASE}/api`,
   headers: { 'Content-Type': 'application/json' },
   timeout: 15_000,
 })
