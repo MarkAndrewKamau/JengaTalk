@@ -5,7 +5,7 @@ const path = require("node:path");
 const test = require("node:test");
 const { createApp } = require("../src/app");
 const { JsonStore } = require("../src/db/jsonStore");
-const { createSmsService } = require("../src/services/smsService");
+const { createSmsService, sendViaAfricasTalking } = require("../src/services/smsService");
 
 async function withServer(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "jengalink-"));
@@ -143,4 +143,39 @@ test("returns JSON errors for invalid async order requests", async (t) => {
   });
   assert.equal(mismatch.response.status, 400);
   assert.equal(mismatch.body.error.message, "All order items must belong to the selected supplier");
+});
+
+test("fails SMS send when Africa's Talking rejects recipient status", async (t) => {
+  const originalFetch = global.fetch;
+  t.after(() => {
+    global.fetch = originalFetch;
+  });
+
+  global.fetch = async () => ({
+    ok: true,
+    text: async () =>
+      JSON.stringify({
+        SMSMessageData: {
+          Message: "Sent to 0/1 Total Cost: KES 0.0000",
+          Recipients: [
+            {
+              number: "+254742537435",
+              status: "InvalidSenderId",
+              cost: "KES 0.0000",
+              messageId: "at-test-message",
+            },
+          ],
+        },
+      }),
+  });
+
+  await assert.rejects(
+    () =>
+      sendViaAfricasTalking({
+        recipients: ["+254742537435"],
+        text: "Your JengaLink verification code is 123456.",
+        from: "20880",
+      }),
+    /InvalidSenderId/
+  );
 });
