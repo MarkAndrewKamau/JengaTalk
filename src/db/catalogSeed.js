@@ -140,7 +140,7 @@ const catalogMaterials = [
 const catalogSuppliers = [
   {
     user: {
-      phone: "+254711000001",
+      phone: "+254702258157",
       name: "Amina Wanjiku",
       county: "nairobi",
     },
@@ -173,7 +173,7 @@ const catalogSuppliers = [
   },
   {
     user: {
-      phone: "+254711000002",
+      phone: "+254722160280",
       name: "Peter Otieno",
       county: "nairobi",
     },
@@ -337,4 +337,3 @@ const catalogSuppliers = [
 ];
 
 module.exports = { catalogMaterials, catalogSuppliers };
-
