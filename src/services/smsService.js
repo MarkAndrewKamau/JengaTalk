@@ -99,7 +99,27 @@ function createSmsService({ store }) {
     };
 
     if (env.africaTalking.apiKey) {
-      providerResult = await sendViaAfricasTalking({ recipients, text, from });
+      try {
+        providerResult = await sendViaAfricasTalking({ recipients, text, from });
+      } catch (err) {
+        console.error("[SMS] AT send failed:", err.message);
+        // Log the failed attempt so outbound count reflects reality
+        for (const phone of recipients) {
+          store.insert("sms_logs", {
+            from_phone: from,
+            to_phone: phone,
+            message: text,
+            direction: "out",
+            message_type: type,
+            at_message_id: "",
+            cost: "",
+            status: `failed: ${err.message.slice(0, 120)}`,
+            created_at: new Date().toISOString(),
+          });
+        }
+        // Surface the error so callers know SMS didn't go through
+        throw err;
+      }
     }
 
     for (const recipient of providerResult.recipients) {

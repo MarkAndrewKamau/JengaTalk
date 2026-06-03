@@ -60,7 +60,23 @@ function createApp(overrides = {}) {
       service: env.appName,
       uptime_seconds: Math.round(process.uptime()),
       sms_mode: env.africaTalking.apiKey ? "africas-talking" : "mock",
+      at_username: env.africaTalking.username,
+      at_key_set: !!env.africaTalking.apiKey,
+      at_key_prefix: env.africaTalking.apiKey ? env.africaTalking.apiKey.slice(0, 8) + "..." : null,
+      sms_from: env.africaTalking.smsFrom,
     });
+  });
+
+  // Debug: send a test SMS and return the raw AT response
+  app.post("/api/sms/test-send", async (req, res) => {
+    const { to, message } = req.body;
+    if (!to || !message) return res.status(400).json({ error: "to and message required" });
+    try {
+      const result = await smsService.sendSms({ to, message, type: "alert" });
+      res.json({ ok: true, result });
+    } catch (err) {
+      res.status(502).json({ ok: false, error: err.message });
+    }
   });
 
   app.use("/api/auth", authRoutes({ store, smsService }));
