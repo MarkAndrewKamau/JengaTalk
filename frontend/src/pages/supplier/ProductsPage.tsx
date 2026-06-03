@@ -111,8 +111,19 @@ export function ProductsPage() {
   })
 
   const bulkMutation = useMutation({
-    mutationFn: ({ ids, type, value }: { ids: string[]; type: 'amount' | 'percent'; value: number }) =>
-      productsApi.bulkUpdatePrice(ids, type, value),
+    mutationFn: async ({ ids, type, value }: { ids: string[]; type: 'amount' | 'percent'; value: number }) => {
+      // Apply price updates one at a time via PUT /api/products/:id
+      await Promise.all(
+        ids.map((id) => {
+          const product = products.find((p) => p.id === id)
+          if (!product) return Promise.resolve()
+          const newPrice = type === 'percent'
+            ? product.price * (1 + value / 100)
+            : product.price + value
+          return productsApi.update(id, { price: Math.round(newPrice) })
+        })
+      )
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-products'] })
       setBulkModal(false)
@@ -121,7 +132,7 @@ export function ProductsPage() {
     },
   })
 
-  const products: SupplierProduct[] = data?.data?.data?.data || []
+  const products: SupplierProduct[] = data?.data?.products || []
 
   const filtered = products.filter((p) => {
     const matchSearch = p.material?.name?.toLowerCase().includes(search.toLowerCase()) || !search
