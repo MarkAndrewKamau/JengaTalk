@@ -4,11 +4,12 @@ const { generateOtp, otpExpiry, isExpired } = require("../utils/otp");
 const { normalizePhone } = require("../utils/phone");
 const { assertHttp, HttpError } = require("../utils/httpError");
 const { env } = require("../config/env");
+const { asyncHandler } = require("../middleware/errors");
 
 function authRoutes({ store, smsService }) {
   const router = express.Router();
 
-  router.post("/register", async (req, res) => {
+  router.post("/register", asyncHandler(async (req, res) => {
     const phone = normalizePhone(req.body.phone);
     const role = req.body.role || "contractor";
     assertHttp(phone, 400, "Phone is required");
@@ -39,7 +40,7 @@ function authRoutes({ store, smsService }) {
       otp_sent: true,
       dev_otp: env.nodeEnv === "production" ? undefined : otp,
     });
-  });
+  }));
 
   router.post("/verify-otp", (req, res) => {
     const phone = normalizePhone(req.body.phone);
@@ -58,7 +59,7 @@ function authRoutes({ store, smsService }) {
     res.json({ token, user: updated });
   });
 
-  router.post("/login", async (req, res) => {
+  router.post("/login", asyncHandler(async (req, res) => {
     const phone = normalizePhone(req.body.phone);
     const user = store.all("users").find((candidate) => candidate.phone === phone);
     assertHttp(user, 404, "User not found");
@@ -70,7 +71,7 @@ function authRoutes({ store, smsService }) {
       message: `Your ${env.appName} login code is ${otp}. Valid for ${env.otpTtlMinutes} minutes.`,
     });
     res.json({ otp_sent: true, dev_otp: env.nodeEnv === "production" ? undefined : otp });
-  });
+  }));
 
   router.post("/refresh", (req, res) => {
     const token = req.body.token || String(req.get("authorization") || "").replace(/^bearer\s+/i, "");
@@ -85,4 +86,3 @@ function authRoutes({ store, smsService }) {
 }
 
 module.exports = { authRoutes };
-

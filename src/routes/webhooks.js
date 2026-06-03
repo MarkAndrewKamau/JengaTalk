@@ -1,14 +1,15 @@
 const express = require("express");
+const { asyncHandler } = require("../middleware/errors");
 const { assertHttp } = require("../utils/httpError");
 const { updateOrderStatus, getOrderDetail } = require("../services/orderService");
 
 function webhookRoutes({ store, smsCommandService, ussdService, smsService }) {
   const router = express.Router();
 
-  router.post("/sms/inbound", async (req, res) => {
+  router.post("/sms/inbound", asyncHandler(async (req, res) => {
     const result = await smsCommandService.handleInbound(req.body);
     res.json({ ok: true, ...result });
-  });
+  }));
 
   router.post("/sms/delivery-report", (req, res) => {
     const messageId = req.body.id || req.body.messageId || req.body.message_id;
@@ -25,12 +26,12 @@ function webhookRoutes({ store, smsCommandService, ussdService, smsService }) {
     res.json({ ok: true, sms_log: updated });
   });
 
-  router.post("/ussd", async (req, res) => {
+  router.post("/ussd", asyncHandler(async (req, res) => {
     const response = await ussdService.handle(req.body);
     res.type("text/plain").send(response);
-  });
+  }));
 
-  router.post("/voice/callback", async (req, res) => {
+  router.post("/voice/callback", asyncHandler(async (req, res) => {
     const orderId = req.body.orderId || req.body.order_id;
     const digits = String(req.body.dtmfDigits || req.body.digits || req.body.Digits || "");
     assertHttp(orderId, 400, "Order ID is required");
@@ -38,9 +39,9 @@ function webhookRoutes({ store, smsCommandService, ussdService, smsService }) {
     assertHttp(status, 400, "Unsupported voice confirmation digit");
     const order = await updateOrderStatus(store, smsService, orderId, status, "Voice confirmation callback");
     res.json({ ok: true, order });
-  });
+  }));
 
-  router.post("/payments/callback", async (req, res) => {
+  router.post("/payments/callback", asyncHandler(async (req, res) => {
     const orderId = req.body.orderId || req.body.order_id || req.body.metadata?.orderId;
     assertHttp(orderId, 400, "Order ID is required");
     const order = getOrderDetail(store, orderId);
@@ -55,10 +56,9 @@ function webhookRoutes({ store, smsCommandService, ussdService, smsService }) {
       updated_at: new Date().toISOString(),
     });
     res.json({ ok: true, order: getOrderDetail(store, updated.id) });
-  });
+  }));
 
   return router;
 }
 
 module.exports = { webhookRoutes };
-

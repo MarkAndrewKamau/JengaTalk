@@ -121,3 +121,26 @@ test("responds to USSD price lookup", async (t) => {
   assert.match(text, /^CON OPC Cement/);
   assert.match(text, /BM01/);
 });
+
+test("returns JSON errors for invalid async order requests", async (t) => {
+  const { baseUrl } = await withServer(t);
+
+  const missing = await jsonFetch(`${baseUrl}/api/orders/999/status`, {
+    method: "PUT",
+    headers: { "X-Demo-User-Phone": "+254711000001" },
+    body: JSON.stringify({ status: "confirmed" }),
+  });
+  assert.equal(missing.response.status, 404);
+  assert.equal(missing.body.error.message, "Order not found");
+
+  const mismatch = await jsonFetch(`${baseUrl}/api/orders`, {
+    method: "POST",
+    body: JSON.stringify({
+      contractor_phone: "+254722888999",
+      supplier_id: 1,
+      items: [{ supplier_product_id: 5, quantity: 10 }],
+    }),
+  });
+  assert.equal(mismatch.response.status, 400);
+  assert.equal(mismatch.body.error.message, "All order items must belong to the selected supplier");
+});
